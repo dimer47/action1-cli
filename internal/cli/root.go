@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/dimer47/action1-cli/internal/config"
 	mcpcmd "github.com/dimer47/action1-cli/internal/mcp"
 	"github.com/dimer47/action1-cli/internal/output"
+	"github.com/dimer47/action1-cli/internal/update"
 )
 
 var (
@@ -123,8 +125,25 @@ func NewRootCmd() *cobra.Command {
 
 // Execute runs the root command.
 func Execute() {
+	// Start update check in background (non-blocking)
+	updateCh := make(chan *update.Result, 1)
+	go func() {
+		updateCh <- update.Check(Version)
+	}()
+
 	cmd := NewRootCmd()
-	if err := cmd.Execute(); err != nil {
+	err := cmd.Execute()
+
+	// Wait for update check (max 1s)
+	select {
+	case result := <-updateCh:
+		if msg := result.FormatMessage(); msg != "" {
+			fmt.Fprint(os.Stderr, msg)
+		}
+	case <-time.After(1 * time.Second):
+	}
+
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
