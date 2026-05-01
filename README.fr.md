@@ -82,6 +82,20 @@ action1 version
 # action1 version 0.1.0
 ```
 
+## Mise a jour
+
+La CLI verifie automatiquement les nouvelles versions au demarrage et vous notifie quand une mise a jour est disponible.
+
+```bash
+# Mettre a jour vers la derniere version
+action1 self-update
+
+# Verifier les mises a jour sans installer
+action1 self-update --check
+```
+
+La mise a jour est telechargee depuis GitHub Releases et remplace le binaire actuel. Si le binaire est dans un repertoire protege (ex: `/usr/local/bin/`), `sudo` sera demande automatiquement.
+
 ## Demarrage rapide
 
 ### 1. Generer des credentials API

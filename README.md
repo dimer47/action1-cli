@@ -84,6 +84,20 @@ action1 version
 # action1 version 0.1.0
 ```
 
+## Updating
+
+The CLI automatically checks for new versions at startup and notifies you when an update is available.
+
+```bash
+# Update to the latest version
+action1 self-update
+
+# Check for updates without installing
+action1 self-update --check
+```
+
+The update is downloaded from GitHub Releases and replaces the current binary in place. If the binary is in a protected directory (e.g. `/usr/local/bin/`), `sudo` will be requested automatically.
+
 ## Quick Start
 
 ### 1. Generate API credentials
