@@ -117,6 +117,7 @@ func NewRootCmd() *cobra.Command {
 		newLogCmd(),
 		newAuditCmd(),
 		newVersionCmd(),
+		newSelfUpdateCmd(),
 		mcpcmd.NewCmdMcpServe(),
 	)
 

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -61,35 +60,21 @@ func Check(currentVersion string) *Result {
 	return nil
 }
 
+// ClearCache removes the update check cache file.
+func ClearCache() {
+	cachePath := filepath.Join(config.Dir(), cacheFile)
+	_ = os.Remove(cachePath)
+}
+
 // FormatMessage returns the update message for stderr.
 func (r *Result) FormatMessage() string {
 	if r == nil || !r.HasUpdate {
 		return ""
 	}
 
-	goos := runtime.GOOS
-	goarch := runtime.GOARCH
-
-	var cmd string
-	switch goos {
-	case "darwin", "linux":
-		ext := "tar.gz"
-		cmd = fmt.Sprintf(
-			"curl -sL https://github.com/%s/%s/releases/latest/download/%s_%s_%s.%s | tar xz && sudo mv %s /usr/local/bin/",
-			owner, repo, repo, goos, goarch, ext, binary,
-		)
-	case "windows":
-		cmd = fmt.Sprintf(
-			"https://github.com/%s/%s/releases/latest/download/%s_%s_%s.zip",
-			owner, repo, repo, goos, goarch,
-		)
-	default:
-		cmd = fmt.Sprintf("https://github.com/%s/%s/releases/latest", owner, repo)
-	}
-
 	return fmt.Sprintf(
-		"\n  Une nouvelle version de %s est disponible : %s → %s\n  Mise à jour :  %s\n",
-		binary, r.CurrentVersion, r.LatestVersion, cmd,
+		"\n  Une nouvelle version de %s est disponible : %s → %s\n  Mise à jour :  %s self-update\n",
+		binary, r.CurrentVersion, r.LatestVersion, binary,
 	)
 }
 
