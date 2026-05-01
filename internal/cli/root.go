@@ -9,6 +9,7 @@ import (
 	"github.com/dimer47/action1-cli/internal/api"
 	"github.com/dimer47/action1-cli/internal/auth"
 	"github.com/dimer47/action1-cli/internal/config"
+	mcpcmd "github.com/dimer47/action1-cli/internal/mcp"
 	"github.com/dimer47/action1-cli/internal/output"
 )
 
@@ -114,6 +115,7 @@ func NewRootCmd() *cobra.Command {
 		newLogCmd(),
 		newAuditCmd(),
 		newVersionCmd(),
+		mcpcmd.NewCmdMcpServe(),
 	)
 
 	return rootCmd

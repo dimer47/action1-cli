@@ -11,6 +11,7 @@ CLI pour l'API Action1 — gerez vos endpoints, automations, patches et bien plu
 - **Sortie flexible** : table, JSON, CSV, YAML
 - **Multi-plateforme** : macOS, Linux, Windows (amd64 et arm64)
 - **Pagination automatique** : recuperez tous les resultats avec `--all`
+- **Integration MCP** : 50 tools pour Claude Code, VS Code, JetBrains
 
 ## Prerequis
 
@@ -368,6 +369,69 @@ Pour une saisie plus rapide :
 | `data-source` | `ds` |
 | `subscription` | `sub` |
 | `report-subscription` | `report-sub` |
+
+## Integration MCP (Claude Code, VS Code, JetBrains)
+
+La CLI integre un serveur [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) qui expose **50 tools** directement utilisables par les assistants IA.
+
+### Configuration
+
+Ajoutez dans vos settings Claude Code (ou VS Code / JetBrains avec l'extension Claude) :
+
+```json
+{
+  "mcpServers": {
+    "action1": {
+      "command": "action1",
+      "args": ["mcp-serve"]
+    }
+  }
+}
+```
+
+> Le serveur MCP utilise automatiquement vos credentials depuis `action1 auth login`. Aucune configuration supplementaire necessaire.
+
+### Tools MCP disponibles
+
+| Tool | Description |
+|------|-------------|
+| `org-list` | Lister les organisations |
+| `org-create` | Creer une organisation |
+| `endpoint-list` | Lister les endpoints manages |
+| `endpoint-get` | Details d'un endpoint |
+| `endpoint-status` | Statut (online/offline) |
+| `endpoint-update` | Modifier nom/commentaire |
+| `endpoint-delete` | Supprimer un endpoint |
+| `endpoint-missing-updates` | Patches manquants |
+| `endpoint-group-list/get/members` | Groupes d'endpoints |
+| `automation-schedule-list/get/delete` | Planifications |
+| `automation-instance-list/get/results/stop` | Instances |
+| `automation-template-list` | Templates d'actions |
+| `report-list/data/export/requery` | Rapports |
+| `software-list/get` | Depot logiciel |
+| `update-list/get` | Mises a jour manquantes |
+| `installed-software-list/get` | Inventaire logiciel |
+| `vulnerability-list/get/endpoints/cve` | Vulnerabilites |
+| `script-list/get` | Scripts |
+| `data-source-list` | Sources de donnees |
+| `user-me/list/get/roles` | Utilisateurs |
+| `role-list/get/users/permissions` | Roles RBAC |
+| `enterprise-get` | Parametres enterprise |
+| `subscription-info/usage` | Licences et usage |
+| `search` | Recherche |
+| `audit-list/get` | Journal d'audit |
+| `log-get` | Logs diagnostiques |
+
+### Exemple d'utilisation dans Claude Code
+
+Une fois configure, vous pouvez simplement dire :
+
+- *"Liste mes endpoints Action1"*
+- *"Quelles vulnerabilites affectent mon organisation ?"*
+- *"Montre-moi les patches manquants pour l'endpoint X"*
+- *"Quelles automations sont en cours ?"*
+
+Claude appellera automatiquement les bons tools MCP.
 
 ## Developpement
 

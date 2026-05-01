@@ -13,6 +13,7 @@ CLI for the Action1 API — manage your endpoints, automations, patches, and mor
 - **Flexible output**: table, JSON, CSV, YAML
 - **Cross-platform**: macOS, Linux, Windows (amd64 and arm64)
 - **Auto-pagination**: fetch all results with `--all`
+- **MCP integration**: 50 tools for Claude Code, VS Code, JetBrains
 
 ## Prerequisites
 
@@ -370,6 +371,94 @@ For faster typing:
 | `data-source` | `ds` |
 | `subscription` | `sub` |
 | `report-subscription` | `report-sub` |
+
+## MCP Integration (Claude Code, VS Code, JetBrains)
+
+The CLI includes a built-in [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) server exposing **50 tools** for AI assistants.
+
+### Setup
+
+Add to your Claude Code settings (or VS Code / JetBrains with the Claude extension):
+
+```json
+{
+  "mcpServers": {
+    "action1": {
+      "command": "action1",
+      "args": ["mcp-serve"]
+    }
+  }
+}
+```
+
+> The MCP server automatically uses your credentials from `action1 auth login`. No extra configuration needed.
+
+### Available MCP Tools
+
+| Tool | Description |
+|------|-------------|
+| `org-list` | List all organizations |
+| `org-create` | Create a new organization |
+| `endpoint-list` | List managed endpoints |
+| `endpoint-get` | Get endpoint details |
+| `endpoint-status` | Endpoint status (online/offline) |
+| `endpoint-update` | Update endpoint name/comment |
+| `endpoint-delete` | Delete an endpoint |
+| `endpoint-missing-updates` | Missing patches for an endpoint |
+| `endpoint-group-list` | List endpoint groups |
+| `endpoint-group-get` | Get group details |
+| `endpoint-group-members` | List endpoints in a group |
+| `automation-schedule-list` | List automation schedules |
+| `automation-schedule-get` | Get schedule details |
+| `automation-schedule-delete` | Delete a schedule |
+| `automation-instance-list` | List automation instances |
+| `automation-instance-get` | Get instance details |
+| `automation-instance-results` | Endpoint results for an instance |
+| `automation-instance-stop` | Stop a running automation |
+| `automation-template-list` | List action templates |
+| `report-list` | List all reports |
+| `report-data` | Get report data rows |
+| `report-export` | Export a report |
+| `report-requery` | Re-run a report |
+| `software-list` | List software packages |
+| `software-get` | Get package details |
+| `update-list` | List missing updates |
+| `update-get` | Updates for a package |
+| `installed-software-list` | List installed software |
+| `installed-software-get` | Software on a specific endpoint |
+| `vulnerability-list` | List vulnerable software |
+| `vulnerability-get` | CVE details (org-specific) |
+| `vulnerability-endpoints` | Endpoints affected by a CVE |
+| `vulnerability-cve` | CVE description (global) |
+| `script-list` | List scripts |
+| `script-get` | Get a script |
+| `data-source-list` | List data sources |
+| `user-me` | Current user info |
+| `user-list` | List all users |
+| `user-get` | Get user details |
+| `user-roles` | User's assigned roles |
+| `role-list` | List all roles |
+| `role-get` | Get role details |
+| `role-users` | Users in a role |
+| `role-permissions` | Permission templates |
+| `enterprise-get` | Enterprise settings |
+| `subscription-info` | License info |
+| `subscription-usage` | Usage statistics |
+| `search` | Search endpoints, reports, apps |
+| `audit-list` | Audit trail events |
+| `audit-get` | Audit event details |
+| `log-get` | Diagnostic logs |
+
+### Usage in Claude Code
+
+Once configured, you can simply say:
+
+- *"List my Action1 endpoints"*
+- *"What vulnerabilities affect my organization?"*
+- *"Show me the missing patches for endpoint X"*
+- *"What automations are running?"*
+
+Claude will automatically call the right MCP tools.
 
 ## Development
 
