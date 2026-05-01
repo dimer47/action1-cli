@@ -63,6 +63,10 @@ type mcpClient struct {
 	baseURL    string
 	token      string
 	httpClient *http.Client
+	store      auth.Store
+	profile    string
+	creds      auth.Credentials
+	region     config.Region
 }
 
 func resolveClient() (*mcpClient, error) {
@@ -80,18 +84,81 @@ func resolveClient() (*mcpClient, error) {
 
 	store := auth.NewStore("", false)
 	creds, err := store.Load(profile)
-	if err != nil || creds.AccessToken == "" {
+	if err != nil {
 		return nil, fmt.Errorf("not authenticated — run 'action1 auth login' first")
 	}
 
-	return &mcpClient{
+	c := &mcpClient{
 		baseURL:    region.BaseURL(),
 		token:      creds.AccessToken,
 		httpClient: &http.Client{Timeout: 120 * time.Second},
-	}, nil
+		store:      store,
+		profile:    profile,
+		creds:      creds,
+		region:     region,
+	}
+
+	// If no access token but we have refresh credentials, refresh now
+	if creds.AccessToken == "" {
+		if err := c.refreshToken(); err != nil {
+			return nil, fmt.Errorf("not authenticated — run 'action1 auth login' first")
+		}
+	}
+
+	return c, nil
+}
+
+func (c *mcpClient) refreshToken() error {
+	if c.creds.ClientID == "" || c.creds.ClientSecret == "" {
+		return fmt.Errorf("no client credentials available")
+	}
+
+	form := url.Values{
+		"client_id":     {c.creds.ClientID},
+		"client_secret": {c.creds.ClientSecret},
+	}
+
+	req, err := http.NewRequest("POST", c.baseURL+"/oauth2/token", strings.NewReader(form.Encode()))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("authentication failed with status %d", resp.StatusCode)
+	}
+
+	var oauthResp struct {
+		AccessToken  string `json:"access_token"`
+		RefreshToken string `json:"refresh_token"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&oauthResp); err != nil {
+		return err
+	}
+
+	c.token = oauthResp.AccessToken
+	c.creds.AccessToken = oauthResp.AccessToken
+	if oauthResp.RefreshToken != "" {
+		c.creds.RefreshToken = oauthResp.RefreshToken
+	}
+
+	// Persist the new token
+	_ = c.store.Save(c.profile, c.creds)
+
+	return nil
 }
 
 func (c *mcpClient) do(method, path string, body interface{}) ([]byte, error) {
+	return c.doWithRetry(method, path, body, true)
+}
+
+func (c *mcpClient) doWithRetry(method, path string, body interface{}, canRetry bool) ([]byte, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		data, err := json.Marshal(body)
@@ -118,6 +185,13 @@ func (c *mcpClient) do(method, path string, body interface{}) ([]byte, error) {
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+
+	// Auto-refresh on 401 and retry once
+	if resp.StatusCode == http.StatusUnauthorized && canRetry {
+		if refreshErr := c.refreshToken(); refreshErr == nil {
+			return c.doWithRetry(method, path, body, false)
+		}
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
