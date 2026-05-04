@@ -223,8 +223,22 @@ func (c *Client) do(method, path string, query url.Values, body interface{}) (js
 }
 
 func (c *Client) doRaw(method, path string, body io.Reader, contentType string) (json.RawMessage, error) {
+	return c.doRawWithRetry(method, path, body, contentType, true)
+}
+
+func (c *Client) doRawWithRetry(method, path string, body io.Reader, contentType string, canRetry bool) (json.RawMessage, error) {
 	if err := c.EnsureAuth(); err != nil {
 		return nil, err
+	}
+
+	// Buffer the body so it can be replayed on retry
+	var bodyBytes []byte
+	if body != nil {
+		var err error
+		bodyBytes, err = io.ReadAll(body)
+		if err != nil {
+			return nil, fmt.Errorf("reading request body: %w", err)
+		}
 	}
 
 	fullURL := c.BaseURL + path
@@ -232,7 +246,12 @@ func (c *Client) doRaw(method, path string, body io.Reader, contentType string) 
 		fmt.Printf("→ %s %s\n", method, fullURL)
 	}
 
-	req, err := http.NewRequest(method, fullURL, body)
+	var bodyReader io.Reader
+	if bodyBytes != nil {
+		bodyReader = bytes.NewReader(bodyBytes)
+	}
+
+	req, err := http.NewRequest(method, fullURL, bodyReader)
 	if err != nil {
 		return nil, err
 	}
@@ -254,6 +273,17 @@ func (c *Client) doRaw(method, path string, body io.Reader, contentType string) 
 		return nil, fmt.Errorf("reading response: %w", err)
 	}
 
+	// Auto-refresh on 401 and retry once
+	if resp.StatusCode == http.StatusUnauthorized && canRetry {
+		if refreshErr := c.tryRefresh(); refreshErr == nil {
+			var retryBody io.Reader
+			if bodyBytes != nil {
+				retryBody = bytes.NewReader(bodyBytes)
+			}
+			return c.doRawWithRetry(method, path, retryBody, contentType, false)
+		}
+	}
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return nil, parseErrorFromBody(resp.StatusCode, respBody)
 	}
@@ -263,6 +293,36 @@ func (c *Client) doRaw(method, path string, body io.Reader, contentType string) 
 	}
 
 	return json.RawMessage(respBody), nil
+}
+
+// tryRefresh attempts to refresh the access token using stored credentials.
+func (c *Client) tryRefresh() error {
+	creds, err := c.Store.Load(c.Profile)
+	if err != nil || (creds.ClientID == "" || creds.ClientSecret == "") {
+		return fmt.Errorf("no credentials available for refresh")
+	}
+
+	// Try refresh token first, fall back to re-authentication
+	if creds.RefreshToken != "" {
+		oauthResp, err := c.RefreshAuth(creds.ClientID, creds.ClientSecret, creds.RefreshToken)
+		if err == nil {
+			creds.AccessToken = oauthResp.AccessToken
+			creds.RefreshToken = oauthResp.RefreshToken
+			_ = c.Store.Save(c.Profile, creds)
+			return nil
+		}
+	}
+
+	// Fall back to full re-authentication
+	oauthResp, err := c.Authenticate(creds.ClientID, creds.ClientSecret)
+	if err != nil {
+		return fmt.Errorf("re-authentication failed: %w", err)
+	}
+
+	creds.AccessToken = oauthResp.AccessToken
+	creds.RefreshToken = oauthResp.RefreshToken
+	_ = c.Store.Save(c.Profile, creds)
+	return nil
 }
 
 func parseError(resp *http.Response) error {
