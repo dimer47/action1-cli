@@ -474,6 +474,34 @@ Once configured, you can simply say:
 
 Claude will automatically call the right MCP tools.
 
+### Error hints
+
+When the Action1 API rejects a request, the CLI appends a short explanation to
+the raw error when it recognises the case — so you don't have to rediscover the
+API's expectations by trial and error.
+
+```
+Error: API error 400: Invalid schedule settings
+
+Format attendu pour settings :
+    ENABLED|DISABLED  <fréquence>  AT:hh-mm-ss  [DATE:AAAA-MM-JJ]
+...
+```
+
+Covered cases: `settings` schedule syntax, mandatory fields when creating a
+script (`platform`, `language`, `status`, `script_text`), read-only fields
+(`randomize_start`, `success_codes`), and `retry_minutes` on an
+already-executed automation.
+
+A hint prefixed with `[observé]` rests on an empirical finding the API docs do
+not confirm — treat it as a lead, not a rule. Unprefixed hints were verified
+directly.
+
+The original API message is always preserved; hints never block a call, so a
+change on Action1's side cannot make the CLI reject a valid value.
+Hints live in `internal/apierr/hints.go` and are shared by the CLI and the MCP
+server.
+
 ## Development
 
 ```bash

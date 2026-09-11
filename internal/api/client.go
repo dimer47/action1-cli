@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dimer47/action1-cli/internal/apierr"
 	"github.com/dimer47/action1-cli/internal/auth"
 	"github.com/dimer47/action1-cli/internal/config"
 )
@@ -333,7 +334,7 @@ func parseError(resp *http.Response) error {
 func parseErrorFromBody(statusCode int, body []byte) error {
 	var apiErr APIError
 	if err := json.Unmarshal(body, &apiErr); err == nil && apiErr.Message != "" {
-		return fmt.Errorf("API error %d: %s", statusCode, apiErr.Message)
+		return apierr.Wrap(statusCode, apiErr.Message)
 	}
-	return fmt.Errorf("API error %d: %s", statusCode, string(body))
+	return apierr.Wrap(statusCode, string(body))
 }

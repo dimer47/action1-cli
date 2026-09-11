@@ -14,6 +14,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
 
+	"github.com/dimer47/action1-cli/internal/apierr"
 	"github.com/dimer47/action1-cli/internal/auth"
 	"github.com/dimer47/action1-cli/internal/config"
 )
@@ -195,7 +196,7 @@ func (c *mcpClient) doWithRetry(method, path string, body interface{}, canRetry 
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(data))
+		return nil, apierr.Wrap(resp.StatusCode, string(data))
 	}
 
 	return data, nil

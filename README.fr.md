@@ -447,6 +447,34 @@ Une fois configure, vous pouvez simplement dire :
 
 Claude appellera automatiquement les bons tools MCP.
 
+### Indications sur les erreurs
+
+Quand l'API Action1 rejette une requete, le CLI ajoute une courte explication
+sous l'erreur brute lorsqu'il reconnait le cas — de quoi eviter de redecouvrir
+les attentes de l'API par tatonnement.
+
+```
+Error: API error 400: Invalid schedule settings
+
+Format attendu pour settings :
+    ENABLED|DISABLED  <frequence>  AT:hh-mm-ss  [DATE:AAAA-MM-JJ]
+...
+```
+
+Cas couverts : syntaxe de `settings`, champs obligatoires a la creation d'un
+script (`platform`, `language`, `status`, `script_text`), champs en lecture
+seule (`randomize_start`, `success_codes`), et `retry_minutes`.
+
+Une indication prefixee de `[observe]` repose sur un constat empirique que la
+documentation ne confirme pas : a prendre comme une piste, pas comme une regle.
+Sans prefixe, le fait a ete verifie directement.
+
+Le message d'origine de l'API est toujours conserve, et une indication ne
+bloque jamais un appel : un changement cote Action1 ne peut pas amener le CLI
+a refuser une valeur valide.
+Les indications sont dans `internal/apierr/hints.go`, partagees par le CLI et
+le serveur MCP.
+
 ## Developpement
 
 ```bash
