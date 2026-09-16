@@ -338,3 +338,18 @@ func parseErrorFromBody(statusCode int, body []byte) error {
 	}
 	return apierr.Wrap(statusCode, string(body))
 }
+
+// EscapeID encodes a path segment for use in an API URL.
+//
+// Automation instance ids embed the schedule timezone, so an id can contain a
+// literal "/" (for example "..._2026-09-14_11-00-00_Europe/Paris"). Injected as
+// is, that slash splits the path and the API answers 403; encoded once as %2F it
+// answers 404. The gateway decodes the path before routing, so the slash has to
+// survive that first pass: "%252F" is decoded to "%2F" by the gateway, then to
+// "/" by the application, which finally matches the id.
+//
+// Verified against the live API on 2026-09-16 for GET on an instance, GET on its
+// endpoint-results and POST on its stop endpoint.
+func EscapeID(id string) string {
+	return strings.ReplaceAll(url.PathEscape(id), "%2F", "%252F")
+}

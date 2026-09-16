@@ -14,6 +14,7 @@ import (
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/spf13/cobra"
 
+	"github.com/dimer47/action1-cli/internal/api"
 	"github.com/dimer47/action1-cli/internal/apierr"
 	"github.com/dimer47/action1-cli/internal/auth"
 	"github.com/dimer47/action1-cli/internal/config"
@@ -434,7 +435,7 @@ func registerTools(s *server.MCPServer) {
 		mcp.WithString("instanceId", mcp.Required(), mcp.Description("Automation instance ID")),
 	), makeHandler("GET", func(r mcp.CallToolRequest) (string, interface{}) {
 		org := getParam(r, "orgId", defaultOrg)
-		return fmt.Sprintf("/automations/instances/%s/%s", org, r.GetString("instanceId", "")), nil
+		return fmt.Sprintf("/automations/instances/%s/%s", org, api.EscapeID(r.GetString("instanceId", ""))), nil
 	}))
 
 	s.AddTool(mcp.NewTool("automation-instance-results",
@@ -443,7 +444,7 @@ func registerTools(s *server.MCPServer) {
 		mcp.WithString("instanceId", mcp.Required(), mcp.Description("Instance ID")),
 	), makeHandler("GET", func(r mcp.CallToolRequest) (string, interface{}) {
 		org := getParam(r, "orgId", defaultOrg)
-		return fmt.Sprintf("/automations/instances/%s/%s/endpoint-results", org, r.GetString("instanceId", "")), nil
+		return fmt.Sprintf("/automations/instances/%s/%s/endpoint-results", org, api.EscapeID(r.GetString("instanceId", ""))), nil
 	}))
 
 	s.AddTool(mcp.NewTool("automation-instance-stop",
@@ -452,7 +453,7 @@ func registerTools(s *server.MCPServer) {
 		mcp.WithString("instanceId", mcp.Required(), mcp.Description("Instance ID")),
 	), makeHandler("POST", func(r mcp.CallToolRequest) (string, interface{}) {
 		org := getParam(r, "orgId", defaultOrg)
-		return fmt.Sprintf("/automations/instances/%s/%s/stop", org, r.GetString("instanceId", "")), nil
+		return fmt.Sprintf("/automations/instances/%s/%s/stop", org, api.EscapeID(r.GetString("instanceId", ""))), nil
 	}))
 
 	s.AddTool(mcp.NewTool("automation-template-list",

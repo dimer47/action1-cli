@@ -5,6 +5,8 @@ import (
 	"net/url"
 
 	"github.com/spf13/cobra"
+
+	"github.com/dimer47/action1-cli/internal/api"
 )
 
 func newAutomationCmd() *cobra.Command {
@@ -292,7 +294,7 @@ func newAutoInstanceGetCmd() *cobra.Command {
 			if err := requireOrg(); err != nil {
 				return err
 			}
-			raw, err := getClient().Get(fmt.Sprintf("/automations/instances/%s/%s", orgID, args[0]), nil)
+			raw, err := getClient().Get(fmt.Sprintf("/automations/instances/%s/%s", orgID, api.EscapeID(args[0])), nil)
 			if err != nil {
 				return err
 			}
@@ -310,7 +312,7 @@ func newAutoInstanceResultsCmd() *cobra.Command {
 			if err := requireOrg(); err != nil {
 				return err
 			}
-			raw, err := getClient().Get(fmt.Sprintf("/automations/instances/%s/%s/endpoint-results", orgID, args[0]), nil)
+			raw, err := getClient().Get(fmt.Sprintf("/automations/instances/%s/%s/endpoint-results", orgID, api.EscapeID(args[0])), nil)
 			if err != nil {
 				return err
 			}
@@ -328,7 +330,7 @@ func newAutoInstanceResultDetailsCmd() *cobra.Command {
 			if err := requireOrg(); err != nil {
 				return err
 			}
-			raw, err := getClient().Get(fmt.Sprintf("/automations/instances/%s/%s/endpoint-results/%s/details", orgID, args[0], args[1]), nil)
+			raw, err := getClient().Get(fmt.Sprintf("/automations/instances/%s/%s/endpoint-results/%s/details", orgID, api.EscapeID(args[0]), api.EscapeID(args[1])), nil)
 			if err != nil {
 				return err
 			}
@@ -346,7 +348,7 @@ func newAutoInstanceStopCmd() *cobra.Command {
 			if err := requireOrg(); err != nil {
 				return err
 			}
-			raw, err := getClient().Post(fmt.Sprintf("/automations/instances/%s/%s/stop", orgID, args[0]), nil)
+			raw, err := getClient().Post(fmt.Sprintf("/automations/instances/%s/%s/stop", orgID, api.EscapeID(args[0])), nil)
 			if err != nil {
 				return err
 			}
