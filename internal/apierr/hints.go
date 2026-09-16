@@ -80,8 +80,14 @@ Exemples :
     ENABLED WEEKLY:Mon AT:11-00-00
     ENABLED WEEKLY:Mon,Thu AT:07-30-00
 Attention : WEEKLY:Mon, et non DAYS:MON.
-Pour un horaire stable été comme hiver, utiliser settings_timezone: "Europe/Paris"
-plutôt que "UTC".`,
+settings_timezone doit valoir "UTC" — convertir l'heure locale voulue avant
+de l'écrire dans AT: (ex. 11h00 Paris en été -> AT:09-00-00).
+[observé] L'API accepte un nom de zone IANA comme "Europe/Paris" et renvoie
+200, mais la planification ne s'exécute jamais : elle reste Running à 0 %,
+sans aucun résultat d'endpoint. La console n'expose que "Current Timezone"
+et "Local Endpoint Time", et écrit toujours "UTC" en convertissant l'heure.
+Un identifiant d'instance contenant "/" (Europe/Paris) casse en outre les
+URL de résultats : 403 sur .../instances/<org>/<id>/endpoint-results.`,
 	},
 	{
 		match: containsAll("script_text"),
