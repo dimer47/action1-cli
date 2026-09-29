@@ -538,6 +538,26 @@ func registerTools(s *server.MCPServer) {
 		return fmt.Sprintf("/updates/%s/%s", org, r.GetString("packageId", "")), nil
 	}))
 
+	s.AddTool(mcp.NewTool("update-approve",
+		mcp.WithDescription("Set the approval status of an update package version (requires approve_updates)"),
+		mcp.WithString("orgId", mcp.Description("Organization ID (default: from config), or \"all\"")),
+		mcp.WithString("packageId", mcp.Required(), mcp.Description("Package ID")),
+		mcp.WithString("versionId", mcp.Required(), mcp.Description("Version ID of the package")),
+		mcp.WithString("approvalStatus", mcp.Required(), mcp.Description("New approval status: New, Approved or Declined")),
+	), makeHandler("POST", func(r mcp.CallToolRequest) (string, interface{}) {
+		org := getParam(r, "orgId", defaultOrg)
+		// package_id is singular: the published API reference spells it
+		// packages_id, but the endpoint rejects that payload.
+		body := []map[string]interface{}{{
+			"approval_status": r.GetString("approvalStatus", ""),
+			"packages": []map[string]interface{}{{
+				"package_id": r.GetString("packageId", ""),
+				"version_id": r.GetString("versionId", ""),
+			}},
+		}}
+		return fmt.Sprintf("/updates/%s/approvals", org), body
+	}))
+
 	// ============================================================
 	// Installed Software Inventory
 	// ============================================================
