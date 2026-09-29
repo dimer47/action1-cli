@@ -16,6 +16,7 @@ func newUpdateCmd() *cobra.Command {
 		newUpdateListCmd(),
 		newUpdateGetCmd(),
 		newUpdateEndpointsCmd(),
+		newUpdateApproveCmd(),
 	)
 
 	return cmd
@@ -72,4 +73,58 @@ func newUpdateEndpointsCmd() *cobra.Command {
 			return printRaw(raw)
 		},
 	}
+}
+
+func newUpdateApproveCmd() *cobra.Command {
+	var data string
+
+	cmd := &cobra.Command{
+		Use:   "approve",
+		Short: "Set approval status for updates in bulk",
+		Long: `Set approval status for updates in bulk.
+
+Requires the approve_updates permission.
+
+The payload is an array of status changes, each carrying an approval_status
+("New", "Approved" or "Declined") and the packages it applies to:
+
+  [
+    {
+      "approval_status": "Approved",
+      "packages": [
+        {
+          "package_id": "The_Git_Development_Community_Git_1693310149374_builtin",
+          "version_id": "2.51.0.2_1759192980389"
+        }
+      ]
+    }
+  ]
+
+The field is package_id, singular. The published API reference spells it
+packages_id, but the endpoint rejects that with "Property name
+[0].packages[0].package_id must be set" — checked against the live API on
+2026-09-29.
+
+With --org all, a package scoped to a single organization is updated only for
+the organization it belongs to.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireOrg(); err != nil {
+				return err
+			}
+			body, err := parseDataFlagAny(data)
+			if err != nil {
+				return err
+			}
+			raw, err := getClient().Post(fmt.Sprintf("/updates/%s/approvals", orgID), body)
+			if err != nil {
+				return err
+			}
+			return printRaw(raw)
+		},
+	}
+
+	cmd.Flags().StringVar(&data, "data", "", "JSON payload (inline, @file, or -)")
+	_ = cmd.MarkFlagRequired("data")
+
+	return cmd
 }

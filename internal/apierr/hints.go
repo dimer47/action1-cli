@@ -90,6 +90,14 @@ Un identifiant d'instance contenant "/" (Europe/Paris) casse en outre les
 URL de résultats : 403 sur .../instances/<org>/<id>/endpoint-results.`,
 	},
 	{
+		match: containsAll("packages", "package_id", "must be set"),
+		text: `Le champ est package_id, au singulier, dans chaque entrée de packages :
+    [{"approval_status":"Approved",
+      "packages":[{"package_id":"<ID>","version_id":"<VERSION>"}]}]
+[observé] La référence API publiée écrit packages_id, mais l'endpoint refuse
+cette forme. approval_status vaut New, Approved ou Declined.`,
+	},
+	{
 		match: containsAll("script_text"),
 		text:  `Le corps d'un script se passe dans script_text (et non body).`,
 	},

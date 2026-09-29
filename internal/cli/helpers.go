@@ -31,28 +31,53 @@ func rawToInterface(items []json.RawMessage) []interface{} {
 	return result
 }
 
-// parseDataFlag parses a --data flag value which can be inline JSON, @file, or -.
-func parseDataFlag(data string) (map[string]interface{}, error) {
-	var raw []byte
-
+// readDataFlag resolves a --data flag value to its raw bytes. The value is
+// inline JSON, @file to read from a file, or - to read from stdin.
+func readDataFlag(data string) ([]byte, error) {
 	if data == "-" {
 		scanner := bufio.NewScanner(os.Stdin)
 		var lines []string
 		for scanner.Scan() {
 			lines = append(lines, scanner.Text())
 		}
-		raw = []byte(strings.Join(lines, "\n"))
-	} else if strings.HasPrefix(data, "@") {
-		var err error
-		raw, err = os.ReadFile(data[1:])
+		return []byte(strings.Join(lines, "\n")), nil
+	}
+
+	if strings.HasPrefix(data, "@") {
+		raw, err := os.ReadFile(data[1:])
 		if err != nil {
 			return nil, fmt.Errorf("reading file %s: %w", data[1:], err)
 		}
-	} else {
-		raw = []byte(data)
+		return raw, nil
+	}
+
+	return []byte(data), nil
+}
+
+// parseDataFlag parses a --data flag value into a JSON object.
+func parseDataFlag(data string) (map[string]interface{}, error) {
+	raw, err := readDataFlag(data)
+	if err != nil {
+		return nil, err
 	}
 
 	var result map[string]interface{}
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return nil, fmt.Errorf("parsing JSON: %w", err)
+	}
+	return result, nil
+}
+
+// parseDataFlagAny parses a --data flag value into any JSON value, keeping the
+// payload shape the endpoint expects. Some endpoints take a top-level array
+// rather than an object — POST /updates/{orgId}/approvals, for one.
+func parseDataFlagAny(data string) (interface{}, error) {
+	raw, err := readDataFlag(data)
+	if err != nil {
+		return nil, err
+	}
+
+	var result interface{}
 	if err := json.Unmarshal(raw, &result); err != nil {
 		return nil, fmt.Errorf("parsing JSON: %w", err)
 	}
